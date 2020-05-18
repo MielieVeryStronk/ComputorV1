@@ -30,10 +30,6 @@ class Polynomial:
 
     def __init__(self, expression):
         self.terms = self.parsePoly(expression)
-        if int(self.degree) > 2:
-            print("Polynomial degree = " + str(self.degree))
-            print("The polynomial degree is strictly greater than 2, I can't solve.")
-            exit(0)
 
     def parsePoly(self, poly):
         terms_lhs = []
@@ -49,12 +45,6 @@ class Polynomial:
             terms_lhs.append(Term(exp, "lhs"))
         for exp in rhs:
             terms_rhs.append(Term(exp, "rhs"))
-        for left in terms_lhs:
-            if int(left.power) > self.degree:
-                self.degree = int(left.power)
-        for right in terms_rhs:
-            if int(right.power) > self.degree:
-                self.degree = int(right.power)
         final.append(Term("+ 0 * X^0", "lhs"))
         final.append(Term("+ 0 * X^1", "lhs"))
         final.append(Term("+ 0 * X^2", "lhs"))
@@ -66,6 +56,26 @@ class Polynomial:
             for right in terms_rhs:
                 if f.power == right.power:
                     f.coeff += right.coeff
+        for item in final:
+            if int(item.power) > self.degree:
+                self.degree = int(item.power)
+        for item in final:
+            if float(item.coeff) == 0.0:
+                final.remove(item)
+        for item in terms_lhs:
+            if int(item.power) > self.degree:
+                self.degree = int(item.power)
+        for item in terms_rhs:
+            if int(item.power) > self.degree:
+                self.degree = int(item.power)
+        if self.degree > 2:
+            print("Degree larger than 2, unable to solve.")
+            exit(0)
+        else:
+            self.degree = 0
+        for item in final:
+            if int(item.power) > self.degree:
+                self.degree = int(item.power)
         return final
 
 
@@ -84,40 +94,70 @@ def print_sign(coeff):
 
 def print_reduced(poly):
     print("Reduced form: ", end="")
+    poly.terms.sort(key=lambda x: x.power)
     for item in poly.terms:
-        print_sign(item.coeff)
-        print(" * X^" + str(item.power), end=" ")
+        if int(item.power) == 0:
+            print(str(to_whole(item.coeff)) + " * X^0", end=" ")
+        else:
+            print_sign(item.coeff)
+            print(" * X^" + str(item.power), end=" ")
     print("= 0")
 
 
 def solve_polynomial(poly):
-    a = 1.0
-    b = 1.0
-    c = 1.0
+    a = 0.0
+    b = 0.0
+    c = 0.0
+
     degree = 0
 
     for term in poly.terms:
         if int(term.power) == 0:
-            c = term.coeff
+            c = float(term.coeff)
         elif int(term.power) == 1:
-            b = term.coeff
+            b = float(term.coeff)
         elif int(term.power) == 2:
-            a = term.coeff
-    print("Polynomial degree = " + str(poly.degree))
-    d = (b**2) - (4*a*c)
-    if d == 0.0:
-        print("Discriminant is zero. One real solution:")
-        print(str(round((-b+d**(1/2))/(2*a), 6)))
-    elif d > 0.0:
-        print("Discriminant is strictly positive. Two real solutions:")
-        print(str(round((-b-d**(1/2))/(2*a), 6)))
-        print(str(round((-b+d**(1/2))/(2*a), 6)))
-    elif d < 0.0:
-        print("There are no real solutions:")
-        exit(0)
+            a = float(term.coeff)
+    print("Polynomial degree : " + str(poly.degree))
+    if poly.degree == 0:
+        if int(a) == 0:
+            print("All real numbers are a solution.")
+        else:
+            print("There is no solution.")
     if poly.degree == 1:
+        if len(poly.terms) > 1:
+            b = float(poly.terms[0].coeff)
+            a = float(poly.terms[1].coeff)
+        else:
+            b = 0
+            a = float(poly.terms[0].coeff)
         print("The solution is:")
-        print(str(round(-(c/b), 6)))
+        print(str(round((-b/a), 6)))
+    if poly.degree == 2:
+        if len(poly.terms) > 2:
+            c = float(poly.terms[0].coeff)
+            b = float(poly.terms[1].coeff)
+            a = float(poly.terms[2].coeff)
+        elif len(poly.terms) > 1:
+            c = 0
+            b = float(poly.terms[0].coeff)
+            a = float(poly.terms[1].coeff)
+        else:
+            c = 0
+            b = 0
+            a = float(poly.terms[0].coeff)
+        d = b**2-(4*a*c)
+        if d == 0.0:
+            print("Discriminant is zero. One real solution:")
+            print(str(round((-b/(2*a)), 6)))
+        elif d > 0.0:
+            print("Discriminant is strictly positive. Two real solutions:")
+            print(str(round(((-b - (d ** 0.5)) / (2 * a)), 6)))
+            print(str(round(((-b + (d ** 0.5)) / (2 * a)), 6)))
+        elif d < 0.0:
+            print("There are no real solutions, complex solution is:")
+            print(str((-b - (d ** 0.5)) / (2 * a)))
+            exit(0)
     elif poly.degree == 0:
         sol = True
         for term in poly.terms:
